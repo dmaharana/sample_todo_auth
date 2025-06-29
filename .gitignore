@@ -1,1 +1,3 @@
 backend/sample_todo_auth.db
+*.log
+*/tmp/*
