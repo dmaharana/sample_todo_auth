@@ -1,0 +1,17 @@
+- A sample application with NodeJs frontend and golang backend with basic authentication.
+- Frontend
+    - Typescript
+    - shadcn/ui
+    - pages
+        - login page
+        - app page to manage todo tasks (add/modify/remove) 
+        - user management (add/modify/remove) user and their role
+    - have sidebar component to navigate to either app page or user management
+    - show the user management page only to the admin user
+- Backend
+    - Golang
+    - logrus for loging
+    - bun for database management
+    - GIN for webserver
+- Database
+    - Sqlite (without CGO)
