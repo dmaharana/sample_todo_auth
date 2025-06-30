@@ -22,7 +22,7 @@ const Layout: React.FC = () => {
 
   return (
     <div className="flex h-screen">
-      <aside className={`relative h-full border-r bg-background p-4 flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+      <aside className={`relative h-full border-r bg-muted/40 p-4 flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
         <Button
           variant="ghost"
           size="icon"
@@ -62,7 +62,7 @@ const Layout: React.FC = () => {
               {!isCollapsed && <span className="text-sm font-medium">{username}</span>}
             </div>
             <Button
-              variant="outline"
+              variant="ghost"
               size="icon"
               onClick={toggleTheme}
             >
