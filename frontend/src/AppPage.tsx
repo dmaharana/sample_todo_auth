@@ -5,6 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { jwtDecode } from 'jwt-decode';
+import { Pencil, Trash2 } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Label } from '@/components/ui/label';
 
 interface Task {
   ID: number;
@@ -18,6 +21,8 @@ const AppPage: React.FC = () => {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -27,7 +32,6 @@ const AppPage: React.FC = () => {
         setCurrentUserId(decodedToken.user_id);
       } catch (err) {
         console.error("Failed to decode token:", err);
-        // Handle invalid token, e.g., redirect to login
       }
     }
   }, []);
@@ -47,7 +51,7 @@ const AppPage: React.FC = () => {
       } else {
         setError('An unexpected error occurred');
       }
-      setTasks([]); // Ensure tasks is an empty array on error
+      setTasks([]);
     }
   };
 
@@ -82,16 +86,18 @@ const AppPage: React.FC = () => {
     }
   };
 
-  const handleUpdateTask = async (task: Task) => {
+  const handleUpdateTask = async (task: Task, newTitle?: string) => {
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/tasks/${task.ID}`, { ...task, Done: !task.Done }, {
+      const updatedTask = { ...task, Title: newTitle !== undefined ? newTitle : task.Title, Done: newTitle !== undefined ? task.Done : !task.Done };
+      await axios.put(`/api/tasks/${task.ID}`, updatedTask, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       fetchTasks();
+      setIsSheetOpen(false);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response) {
         setError(err.response.data.error || 'Failed to update task');
@@ -118,6 +124,11 @@ const AppPage: React.FC = () => {
         setError('An unexpected error occurred');
       }
     }
+  };
+
+  const handleEditClick = (task: Task) => {
+    setEditingTask(task);
+    setIsSheetOpen(true);
   };
 
   return (
@@ -155,7 +166,14 @@ const AppPage: React.FC = () => {
                     {task.Title}
                   </label>
                 </div>
-                <Button variant="destructive" size="sm" onClick={() => handleDeleteTask(task.ID)}>Delete</Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon" onClick={() => handleEditClick(task)}>
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="destructive" size="icon" onClick={() => handleDeleteTask(task.ID)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
@@ -163,6 +181,35 @@ const AppPage: React.FC = () => {
           <p className="text-center text-gray-500">No tasks found. Add a new task!</p>
         )}
       </CardContent>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="p-4">
+          <SheetHeader>
+            <SheetTitle>Edit Task</SheetTitle>
+          </SheetHeader>
+          {editingTask && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const form = e.target as HTMLFormElement;
+                const input = form.elements.namedItem('newTitle') as HTMLInputElement;
+                handleUpdateTask(editingTask, input.value);
+              }}
+              className="grid gap-4 py-4"
+            >
+              <div className="grid gap-2">
+                <Label htmlFor="newTitle">New Title</Label>
+                <Input
+                  id="newTitle"
+                  type="text"
+                  defaultValue={editingTask.Title}
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full">Save Changes</Button>
+            </form>
+          )}
+        </SheetContent>
+      </Sheet>
     </Card>
   );
 };

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, Outlet, useOutletContext } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ListTodo, Users, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { ListTodo, Users, ChevronLeft, ChevronRight, User, Sun, Moon } from 'lucide-react';
 
 interface ContextType {
   userRole: string;
@@ -10,8 +10,15 @@ interface ContextType {
 
 const Layout: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   const { userRole, username } = useOutletContext<ContextType>();
   const isAdmin = userRole === 'admin';
+
+  const toggleTheme = () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(newTheme);
+    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+  };
 
   return (
     <div className="flex h-screen">
@@ -49,9 +56,22 @@ const Layout: React.FC = () => {
           </ul>
         </nav>
         <div className="mt-auto pt-4 border-t border-gray-200">
-          <div className="flex items-center justify-center mb-2">
-            <User className={`h-4 w-4 ${!isCollapsed ? 'mr-2' : ''}`} />
-            {!isCollapsed && <span className="text-sm font-medium">{username}</span>}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+              <User className={`h-4 w-4 ${!isCollapsed ? 'mr-2' : ''}`} />
+              {!isCollapsed && <span className="text-sm font-medium">{username}</span>}
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={toggleTheme}
+            >
+              {theme === 'light' ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
           </div>
           <Button
             onClick={() => {
