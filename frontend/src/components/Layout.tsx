@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Outlet, useOutletContext } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ListTodo, Users, ChevronLeft, ChevronRight, User, Sun, Moon } from 'lucide-react';
@@ -10,14 +10,30 @@ interface ContextType {
 
 const Layout: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+      if (savedTheme) return savedTheme;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } catch (error) {
+      console.error("Failed to access localStorage or matchMedia:", error);
+      return 'light';
+    }
+  });
   const { userRole, username } = useOutletContext<ContextType>();
   const isAdmin = userRole === 'admin';
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    try {
+      localStorage.setItem('theme', theme);
+    } catch (error) {
+      console.error("Failed to save theme to localStorage:", error);
+    }
+  }, [theme]);
+
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
-    setTheme(newTheme);
-    document.documentElement.classList.toggle('dark', newTheme === 'dark');
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
   };
 
   return (
@@ -65,6 +81,7 @@ const Layout: React.FC = () => {
               variant="ghost"
               size="icon"
               onClick={toggleTheme}
+              aria-label="Toggle theme"
             >
               {theme === 'light' ? (
                 <Sun className="h-4 w-4" />

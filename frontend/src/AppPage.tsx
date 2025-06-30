@@ -23,6 +23,8 @@ const AppPage: React.FC = () => {
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [editedTaskDone, setEditedTaskDone] = useState(false);
+  const [editedTaskTitle, setEditedTaskTitle] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -35,6 +37,13 @@ const AppPage: React.FC = () => {
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (editingTask) {
+      setEditedTaskTitle(editingTask.Title);
+      setEditedTaskDone(editingTask.Done);
+    }
+  }, [editingTask]);
 
   const fetchTasks = async () => {
     try {
@@ -51,7 +60,7 @@ const AppPage: React.FC = () => {
       } else {
         setError('An unexpected error occurred');
       }
-      setTasks([]);
+      
     }
   };
 
@@ -132,6 +141,7 @@ const AppPage: React.FC = () => {
 
   const handleEditClick = (task: Task) => {
     setEditingTask(task);
+    setEditedTaskDone(task.Done);
     setIsSheetOpen(true);
   };
 
@@ -171,10 +181,10 @@ const AppPage: React.FC = () => {
                   </label>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" onClick={() => handleEditClick(task)}>
+                  <Button variant="outline" size="icon" onClick={() => handleEditClick(task)} aria-label="Edit task">
                     <Pencil className="h-4 w-4" />
                   </Button>
-                  <Button variant="destructive" size="icon" onClick={() => handleDeleteTask(task.ID)}>
+                  <Button variant="destructive" size="icon" onClick={() => handleDeleteTask(task.ID)} aria-label="Delete task">
                     <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
@@ -194,10 +204,7 @@ const AppPage: React.FC = () => {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                const form = e.target as HTMLFormElement;
-                const titleInput = form.elements.namedItem('newTitle') as HTMLInputElement;
-                const doneCheckbox = form.elements.namedItem('newDone') as HTMLInputElement;
-                handleUpdateTask(editingTask, titleInput.value, doneCheckbox.checked);
+                handleUpdateTask(editingTask, editedTaskTitle, editedTaskDone);
               }}
               className="grid gap-4 py-4"
             >
@@ -206,14 +213,16 @@ const AppPage: React.FC = () => {
                 <Input
                   id="newTitle"
                   type="text"
-                  defaultValue={editingTask.Title}
+                  value={editedTaskTitle}
+                  onChange={(e) => setEditedTaskTitle(e.target.value)}
                   required
                 />
               </div>
               <div className="flex items-center space-x-2">
                 <Checkbox
                   id="newDone"
-                  defaultChecked={editingTask.Done}
+                  checked={editedTaskDone}
+                  onCheckedChange={() => setEditedTaskDone(!editedTaskDone)}
                 />
                 <Label htmlFor="newDone">Completed</Label>
               </div>

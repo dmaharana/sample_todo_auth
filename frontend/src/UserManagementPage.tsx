@@ -225,7 +225,7 @@ const UserManagementPage: React.FC = () => {
                   <TableCell className="font-medium">{user.Username}</TableCell>
                   <TableCell>{user.Role.Name}</TableCell>
                   <TableCell className="text-right flex gap-2 justify-end">
-                    <Button variant="outline" size="icon" onClick={() => handleEditClick(user)}>
+                    <Button variant="outline" size="icon" onClick={() => handleEditClick(user)} aria-label={`Edit user ${user.Username}`}>
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
@@ -233,6 +233,7 @@ const UserManagementPage: React.FC = () => {
                       size="icon"
                       onClick={() => handleDeleteUser(user.ID)}
                       disabled={user.ID === currentLoggedInUserId || user.Username === 'admin'}
+                      aria-label={`Delete user ${user.Username}`}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
