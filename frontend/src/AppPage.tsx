@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { jwtDecode } from 'jwt-decode';
 import { Pencil, Trash2 } from 'lucide-react';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 
 interface Task {
@@ -86,11 +86,15 @@ const AppPage: React.FC = () => {
     }
   };
 
-  const handleUpdateTask = async (task: Task, newTitle?: string) => {
+  const handleUpdateTask = async (task: Task, newTitle?: string, newDone?: boolean) => {
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      const updatedTask = { ...task, Title: newTitle !== undefined ? newTitle : task.Title, Done: newTitle !== undefined ? task.Done : !task.Done };
+      const updatedTask = { 
+        ...task, 
+        Title: newTitle !== undefined ? newTitle : task.Title, 
+        Done: newDone !== undefined ? newDone : !task.Done 
+      };
       await axios.put(`/api/tasks/${task.ID}`, updatedTask, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -156,7 +160,7 @@ const AppPage: React.FC = () => {
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     checked={task.Done}
-                    onCheckedChange={() => handleUpdateTask(task)}
+                    onCheckedChange={() => handleUpdateTask(task, task.Title, !task.Done)}
                     id={`task-${task.ID}`}
                   />
                   <label
@@ -191,8 +195,9 @@ const AppPage: React.FC = () => {
               onSubmit={(e) => {
                 e.preventDefault();
                 const form = e.target as HTMLFormElement;
-                const input = form.elements.namedItem('newTitle') as HTMLInputElement;
-                handleUpdateTask(editingTask, input.value);
+                const titleInput = form.elements.namedItem('newTitle') as HTMLInputElement;
+                const doneCheckbox = form.elements.namedItem('newDone') as HTMLInputElement;
+                handleUpdateTask(editingTask, titleInput.value, doneCheckbox.checked);
               }}
               className="grid gap-4 py-4"
             >
@@ -204,6 +209,13 @@ const AppPage: React.FC = () => {
                   defaultValue={editingTask.Title}
                   required
                 />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="newDone"
+                  defaultChecked={editingTask.Done}
+                />
+                <Label htmlFor="newDone">Completed</Label>
               </div>
               <Button type="submit" className="w-full">Save Changes</Button>
             </form>
