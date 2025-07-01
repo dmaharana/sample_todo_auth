@@ -15,7 +15,7 @@ type User struct {
 	Username string `bun:",unique,notnull"`
 	PasswordHash string `bun:"password_hash,notnull"`
 	RoleID   int64
-	Role         *Role     `bun:"rel:has-one,join:role_id=id"`
+	Role         *Role     `bun:"rel:belongs-to,join:role_id=id"`
 	CreatedAt    time.Time `bun:"created_at,notnull,default:current_timestamp,type:timestamptz"`
 	UpdatedAt    time.Time `bun:"updated_at,notnull,default:current_timestamp,type:timestamptz"`
 }

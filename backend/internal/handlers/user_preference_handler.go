@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"backend/internal/models"
+	"database/sql"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -22,13 +23,28 @@ type SetUserPreferenceRequest struct {
 }
 
 func (h *UserPreferenceHandler) GetUserPreference(c *gin.Context) {
-	userID := c.MustGet("userID").(int64)
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	id, ok := userID.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type in context"})
+		return
+	}
+
 	key := c.Param("key")
 
 	var preference models.UserPreference
-	err := h.db.NewSelect().Model(&preference).Where("user_id = ? AND key = ?", userID, key).Scan(c.Request.Context())
+	err := h.db.NewSelect().Model(&preference).Where("user_id = ? AND key = ?", id, key).Scan(c.Request.Context())
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Preference not found"})
+		if err == sql.ErrNoRows {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Preference not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch preference"})
+		}
 		return
 	}
 
@@ -36,7 +52,17 @@ func (h *UserPreferenceHandler) GetUserPreference(c *gin.Context) {
 }
 
 func (h *UserPreferenceHandler) SetUserPreference(c *gin.Context) {
-	userID := c.MustGet("userID").(int64)
+	userID, exists := c.Get("userID")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found in context"})
+		return
+	}
+
+	id, ok := userID.(int64)
+	if !ok {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Invalid user ID type in context"})
+		return
+	}
 
 	var req SetUserPreferenceRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -45,7 +71,7 @@ func (h *UserPreferenceHandler) SetUserPreference(c *gin.Context) {
 	}
 
 	preference := models.UserPreference{
-		UserID: userID,
+		UserID: id,
 		Key:    req.Key,
 		Value:  req.Value,
 	}
