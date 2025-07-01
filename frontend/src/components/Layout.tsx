@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Link, Outlet, useOutletContext } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ListTodo, Users, ChevronLeft, ChevronRight, User, Sun, Moon } from 'lucide-react';
+import { apiRequest } from '@/lib/api';
 
 interface ContextType {
   userRole: string;
@@ -10,30 +11,35 @@ interface ContextType {
 
 const Layout: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
-    try {
-      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-      if (savedTheme) return savedTheme;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    } catch (error) {
-      console.error("Failed to access localStorage or matchMedia:", error);
-      return 'light';
-    }
-  });
+  const [theme, setTheme] = useState<'light' | 'dark'>('light'); // Default to light, will be updated from API
   const { userRole, username } = useOutletContext<ContextType>();
   const isAdmin = userRole === 'admin';
 
   useEffect(() => {
+    const fetchTheme = async () => {
+      const response = await apiRequest<{ value: string }>('/user-preferences/theme', 'GET');
+      if (response.data && (response.data.value === 'light' || response.data.value === 'dark')) {
+        setTheme(response.data.value);
+      } else {
+        // Fallback to system preference if no theme is saved
+        setTheme(window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      }
+    };
+    fetchTheme();
+  }, []);
+
+  useEffect(() => {
     document.documentElement.classList.toggle('dark', theme === 'dark');
-    try {
-      localStorage.setItem('theme', theme);
-    } catch (error) {
-      console.error("Failed to save theme to localStorage:", error);
-    }
   }, [theme]);
 
-  const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  const toggleTheme = async () => {
+    const newTheme = theme === 'light' ? 'dark' : 'light';
+    const response = await apiRequest('/user-preferences', 'POST', { key: 'theme', value: newTheme });
+    if (response.data) {
+      setTheme(newTheme);
+    } else if (response.error) {
+      console.error('Failed to save theme preference:', response.error);
+    }
   };
 
   return (
