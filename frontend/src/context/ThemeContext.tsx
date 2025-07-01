@@ -11,14 +11,23 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
   const [theme, setTheme] = useState<Theme>(() => {
-    const savedTheme = localStorage.getItem('theme');
-    return (savedTheme as Theme) || 'light';
+    try {
+      const savedTheme = localStorage.getItem('theme');
+      return (savedTheme as Theme) || 'light';
+    } catch (error) {
+      console.error("Failed to access localStorage or matchMedia:", error);
+      return 'light';
+    }
   });
 
   useEffect(() => {
     document.documentElement.classList.remove('light', 'dark');
     document.documentElement.classList.add(theme);
-    localStorage.setItem('theme', theme);
+    try {
+      localStorage.setItem('theme', theme);
+    } catch (error) {
+      console.error("Failed to save theme to localStorage:", error);
+    }
   }, [theme]);
 
   return (
