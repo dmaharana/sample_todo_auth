@@ -35,6 +35,11 @@ func NewDB(dsn string) (*bun.DB, error) {
 		return nil, err
 	}
 
+	_, err = db.NewCreateTable().Model((*models.UserPreference)(nil)).IfNotExists().Exec(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
 	// Insert default roles
 	defaultRoles := []models.Role{
 		{ID: 1, Name: "admin"},
@@ -55,6 +60,17 @@ func NewDB(dsn string) (*bun.DB, error) {
 		RoleID:       1, // Admin role
 	}
 	_, err = db.NewInsert().Model(&adminUser).On("CONFLICT(id) DO UPDATE SET username = EXCLUDED.username, password_hash = EXCLUDED.password_hash, role_id = EXCLUDED.role_id").Exec(context.Background())
+	if err != nil {
+		return nil, err
+	}
+
+	// Insert default admin user theme preference
+	adminThemePreference := models.UserPreference{
+		UserID: 1,
+		Key:    "theme",
+		Value:  "light",
+	}
+	_, err = db.NewInsert().Model(&adminThemePreference).On("CONFLICT(user_id, key) DO UPDATE SET value = EXCLUDED.value").Exec(context.Background())
 	if err != nil {
 		return nil, err
 	}

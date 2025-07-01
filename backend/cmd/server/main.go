@@ -8,6 +8,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
+	"github.com/gin-contrib/cors"
 )
 
 func main() {
@@ -24,6 +25,16 @@ func main() {
 
 	// Set up the web server
 	router := gin.Default()
+
+	// CORS middleware
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"}, // Replace with your frontend origin(s) in production
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           300,
+	}))
 
 	// Health check endpoint
 	router.GET("/health", func(c *gin.Context) {
@@ -58,6 +69,11 @@ func main() {
 	protected.POST("/tasks", taskHandler.CreateTask)
 	protected.PUT("/tasks/:id", taskHandler.UpdateTask)
 	protected.DELETE("/tasks/:id", taskHandler.DeleteTask)
+
+	// User Preference routes
+	userPreferenceHandler := handlers.NewUserPreferenceHandler(db)
+	protected.GET("/user-preferences/:key", userPreferenceHandler.GetUserPreference)
+	protected.POST("/user-preferences", userPreferenceHandler.SetUserPreference)
 
 	// Start the server
 	if err := router.Run(":8080"); err != nil {
