@@ -5,6 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { jwtDecode } from 'jwt-decode';
+import { Pencil, Trash2 } from 'lucide-react';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { Label } from '@/components/ui/label';
 
 interface Task {
   ID: number;
@@ -18,6 +21,10 @@ const AppPage: React.FC = () => {
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
+  const [editingTask, setEditingTask] = useState<Task | null>(null);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const [editedTaskDone, setEditedTaskDone] = useState(false);
+  const [editedTaskTitle, setEditedTaskTitle] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -27,10 +34,16 @@ const AppPage: React.FC = () => {
         setCurrentUserId(decodedToken.user_id);
       } catch (err) {
         console.error("Failed to decode token:", err);
-        // Handle invalid token, e.g., redirect to login
       }
     }
   }, []);
+
+  useEffect(() => {
+    if (editingTask) {
+      setEditedTaskTitle(editingTask.Title);
+      setEditedTaskDone(editingTask.Done);
+    }
+  }, [editingTask]);
 
   const fetchTasks = async () => {
     try {
@@ -47,7 +60,7 @@ const AppPage: React.FC = () => {
       } else {
         setError('An unexpected error occurred');
       }
-      setTasks([]); // Ensure tasks is an empty array on error
+      
     }
   };
 
@@ -82,16 +95,22 @@ const AppPage: React.FC = () => {
     }
   };
 
-  const handleUpdateTask = async (task: Task) => {
+  const handleUpdateTask = async (task: Task, newTitle?: string, newDone?: boolean) => {
     setError(null);
     try {
       const token = localStorage.getItem('token');
-      await axios.put(`/api/tasks/${task.ID}`, { ...task, Done: !task.Done }, {
+      const updatedTask = { 
+        ...task, 
+        Title: newTitle !== undefined ? newTitle : task.Title, 
+        Done: newDone !== undefined ? newDone : !task.Done 
+      };
+      await axios.put(`/api/tasks/${task.ID}`, updatedTask, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
       });
       fetchTasks();
+      setIsSheetOpen(false);
     } catch (err) {
       if (axios.isAxiosError(err) && err.response) {
         setError(err.response.data.error || 'Failed to update task');
@@ -120,6 +139,12 @@ const AppPage: React.FC = () => {
     }
   };
 
+  const handleEditClick = (task: Task) => {
+    setEditingTask(task);
+    setEditedTaskDone(task.Done);
+    setIsSheetOpen(true);
+  };
+
   return (
     <Card className="w-full max-w-2xl mx-auto mt-8">
       <CardHeader>
@@ -145,7 +170,7 @@ const AppPage: React.FC = () => {
                 <div className="flex items-center space-x-2">
                   <Checkbox
                     checked={task.Done}
-                    onCheckedChange={() => handleUpdateTask(task)}
+                    onCheckedChange={() => handleUpdateTask(task, task.Title, !task.Done)}
                     id={`task-${task.ID}`}
                   />
                   <label
@@ -155,7 +180,14 @@ const AppPage: React.FC = () => {
                     {task.Title}
                   </label>
                 </div>
-                <Button variant="destructive" size="sm" onClick={() => handleDeleteTask(task.ID)}>Delete</Button>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="icon" onClick={() => handleEditClick(task)} aria-label="Edit task">
+                    <Pencil className="h-4 w-4" />
+                  </Button>
+                  <Button variant="destructive" size="icon" onClick={() => handleDeleteTask(task.ID)} aria-label="Delete task">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
               </li>
             ))}
           </ul>
@@ -163,6 +195,42 @@ const AppPage: React.FC = () => {
           <p className="text-center text-gray-500">No tasks found. Add a new task!</p>
         )}
       </CardContent>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
+        <SheetContent className="p-4">
+          <SheetHeader>
+            <SheetTitle>Edit Task</SheetTitle>
+          </SheetHeader>
+          {editingTask && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleUpdateTask(editingTask, editedTaskTitle, editedTaskDone);
+              }}
+              className="grid gap-4 py-4"
+            >
+              <div className="grid gap-2">
+                <Label htmlFor="newTitle">New Title</Label>
+                <Input
+                  id="newTitle"
+                  type="text"
+                  value={editedTaskTitle}
+                  onChange={(e) => setEditedTaskTitle(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="newDone"
+                  checked={editedTaskDone}
+                  onCheckedChange={() => setEditedTaskDone(!editedTaskDone)}
+                />
+                <Label htmlFor="newDone">Completed</Label>
+              </div>
+              <Button type="submit" className="w-full">Save Changes</Button>
+            </form>
+          )}
+        </SheetContent>
+      </Sheet>
     </Card>
   );
 };

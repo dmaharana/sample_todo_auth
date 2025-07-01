@@ -8,6 +8,7 @@ import React, { useEffect, useState } from 'react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { jwtDecode } from 'jwt-decode';
+import { Pencil, Trash2 } from 'lucide-react';
 
 interface User {
   ID: number;
@@ -224,14 +225,17 @@ const UserManagementPage: React.FC = () => {
                   <TableCell className="font-medium">{user.Username}</TableCell>
                   <TableCell>{user.Role.Name}</TableCell>
                   <TableCell className="text-right flex gap-2 justify-end">
-                    <Button variant="outline" size="sm" onClick={() => handleEditClick(user)}>Edit</Button>
+                    <Button variant="outline" size="icon" onClick={() => handleEditClick(user)} aria-label={`Edit user ${user.Username}`}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
                     <Button
                       variant="destructive"
-                      size="sm"
+                      size="icon"
                       onClick={() => handleDeleteUser(user.ID)}
                       disabled={user.ID === currentLoggedInUserId || user.Username === 'admin'}
+                      aria-label={`Delete user ${user.Username}`}
                     >
-                      Delete
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </TableCell>
                 </TableRow>

@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, Outlet, useOutletContext } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ListTodo, Users, ChevronLeft, ChevronRight, User } from 'lucide-react';
+import { ListTodo, Users, ChevronLeft, ChevronRight, User, Sun, Moon } from 'lucide-react';
 
 interface ContextType {
   userRole: string;
@@ -10,12 +10,35 @@ interface ContextType {
 
 const Layout: React.FC = () => {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
+      if (savedTheme) return savedTheme;
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    } catch (error) {
+      console.error("Failed to access localStorage or matchMedia:", error);
+      return 'light';
+    }
+  });
   const { userRole, username } = useOutletContext<ContextType>();
   const isAdmin = userRole === 'admin';
 
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    try {
+      localStorage.setItem('theme', theme);
+    } catch (error) {
+      console.error("Failed to save theme to localStorage:", error);
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  };
+
   return (
     <div className="flex h-screen">
-      <aside className={`relative h-full border-r bg-background p-4 flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
+      <aside className={`relative h-full border-r bg-muted/40 p-4 flex flex-col transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'}`}>
         <Button
           variant="ghost"
           size="icon"
@@ -49,9 +72,23 @@ const Layout: React.FC = () => {
           </ul>
         </nav>
         <div className="mt-auto pt-4 border-t border-gray-200">
-          <div className="flex items-center justify-center mb-2">
-            <User className={`h-4 w-4 ${!isCollapsed ? 'mr-2' : ''}`} />
-            {!isCollapsed && <span className="text-sm font-medium">{username}</span>}
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center">
+              <User className={`h-4 w-4 ${!isCollapsed ? 'mr-2' : ''}`} />
+              {!isCollapsed && <span className="text-sm font-medium">{username}</span>}
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              aria-label="Toggle theme"
+            >
+              {theme === 'light' ? (
+                <Sun className="h-4 w-4" />
+              ) : (
+                <Moon className="h-4 w-4" />
+              )}
+            </Button>
           </div>
           <Button
             onClick={() => {
